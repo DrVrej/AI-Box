@@ -4,7 +4,7 @@ using Sandbox;
 namespace AIBox {
 	public partial class AIBoxMain : Sandbox.Game {
 		// Constructor
-		public VJMod() {
+		public AIBoxMain() {
 			if (IsServer) {
 				Log.Info("Gamemode Has Created Serverside!");
 			}

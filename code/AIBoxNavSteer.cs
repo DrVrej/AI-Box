@@ -4,7 +4,7 @@ using System;
 using System.Buffers;
 
 namespace AIBox {
-	public class AIBoxAIBoxNavSteer {
+	public class AIBoxNavSteer {
 		protected AIBoxNavPath Path { get; private set; }
 
 		public AIBoxNavSteer() {

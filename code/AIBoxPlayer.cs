@@ -27,18 +27,17 @@ namespace AIBox {
 			base.Simulate(cl);
 			SimulateActiveChild(cl, ActiveChild); // If you have active children (like a weapon etc) you should call this to simulate those too.
 
-			// If we're running serverside and Attack1 was just pressed, spawn something
+			// When Attack1 is pressed, spawn an NPC
 			if (IsServer && Input.Pressed(InputButton.Attack1)) {
+				var tr = Trace.Ray(EyePos, EyePos + EyeRot.Forward * 1000)
+					.Ignore(this)
+					.Size(20)
+					.Run();
+				Log.Info(tr);
 				var npc = new AIBoxNPC {
-					Position = EyePos + EyeRot.Forward * 200,
+					Position = tr.EndPos,
 					Rotation = Rotation.LookAt(EyeRot.Backward.WithZ(0))
 				};
-				/*var ragdoll = new ModelEntity();
-				ragdoll.SetModel("models/citizen/citizen.vmdl");
-				ragdoll.Position = EyePos + EyeRot.Forward * 40;
-				ragdoll.Rotation = Rotation.LookAt( Vector3.Random.Normal );
-				ragdoll.SetupPhysicsFromModel( PhysicsMotionType.Dynamic, false );
-				ragdoll.PhysicsGroup.Velocity = EyeRot.Forward * 1000;*/
 			}
 		}
 
