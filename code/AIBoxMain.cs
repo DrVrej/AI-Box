@@ -1,8 +1,8 @@
 
 using Sandbox;
 
-namespace VJ {
-	public partial class VJMod : Sandbox.Game {
+namespace AIBox {
+	public partial class AIBoxMain : Sandbox.Game {
 		// Constructor
 		public VJMod() {
 			if (IsServer) {
@@ -16,7 +16,7 @@ namespace VJ {
 		public override void ClientJoined(Client client) {
 			base.ClientJoined(client);
 
-			var player = new VJPlayer();
+			var player = new AIBoxPlayer();
 			client.Pawn = player;
 
 			player.Respawn();

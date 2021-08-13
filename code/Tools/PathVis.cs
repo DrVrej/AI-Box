@@ -14,8 +14,8 @@ namespace Lab.Tools {
 
 
 			foreach (var ent in selected) {
-				if (ent is NpcTest npc) {
-					var path = new NavPath();
+				if (ent is AIBoxNPC npc) {
+					var path = new AIBoxNavPath();
 					path.Update(npc.Position, tr.EndPos);
 					//path.DebugDraw( Time.Delta );
 				}

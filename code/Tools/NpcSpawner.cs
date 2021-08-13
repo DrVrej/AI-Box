@@ -5,23 +5,19 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Lab.Tools
-{
-	[Library( "tool_npc" )]
-	public class NpcSpawner : Base
-	{
-		public override void OnClick( TraceResult tr, IList<Entity> selected )
-		{
-			if ( !Host.IsServer ) return;
+namespace Lab.Tools {
+	[Library("tool_npc")]
+	public class NpcSpawner : Base {
+		public override void OnClick(TraceResult tr, IList<Entity> selected) {
+			if (!Host.IsServer) return;
 
-			var npc = new NpcTest
-			{
+			var npc = new AIBoxNP {
 				Position = tr.EndPos,
-				Rotation = Rotation.LookAt( Owner.EyeRot.Backward.WithZ( 0 ) )
+				Rotation = Rotation.LookAt(Owner.EyeRot.Backward.WithZ(0))
 			};
 
-			npc.Tags.Add( "selectable" );
-			npc.Tags.Add( "npc" );
+			npc.Tags.Add("selectable");
+			npc.Tags.Add("npc");
 		}
 	}
 }

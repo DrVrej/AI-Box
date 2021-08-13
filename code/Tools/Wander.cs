@@ -12,8 +12,8 @@ namespace Lab.Tools {
 			if (!Host.IsServer) return;
 
 			foreach (var ent in selected) {
-				if (ent is NpcTest npc) {
-					var wander = new NavSteer();
+				if (ent is AIBoxNPC npc) {
+					var wander = new AIBoxNavSteer();
 					wander.MinRadius = 500;
 					wander.MaxRadius = 2000;
 					npc.Steer = wander;

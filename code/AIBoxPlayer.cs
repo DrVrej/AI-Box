@@ -1,9 +1,8 @@
 using Sandbox;
 using System.Collections.Generic;
 
-namespace VJ {
-
-	partial class VJPlayer : Player {
+namespace AIBox {
+	partial class AIBoxPlayer : Player {
 		public Dictionary<string, string> soundTbl = new Dictionary<string, string>(){
 			{"spawn", "sounds/diagnostics/beep.vsnd"},
 		};
@@ -30,7 +29,7 @@ namespace VJ {
 
 			// If we're running serverside and Attack1 was just pressed, spawn something
 			if (IsServer && Input.Pressed(InputButton.Attack1)) {
-				var npc = new NpcTest {
+				var npc = new AIBoxNPC {
 					Position = EyePos + EyeRot.Forward * 200,
 					Rotation = Rotation.LookAt(EyeRot.Backward.WithZ(0))
 				};
