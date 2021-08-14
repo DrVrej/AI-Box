@@ -57,7 +57,6 @@ namespace AIBox {
 			if (Points.Count == 1) {
 				return (Points[0] - position).WithZ(0).Normal;
 			}
-
 			return (Points[1] - position).WithZ(0).Normal;
 		}
 	}

@@ -1,25 +1,33 @@
 ﻿using Sandbox;
-using System.Diagnostics;
-using System.IO;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace AIBox {
-	[Library("npc_test", Title = "Npc Test", Spawnable = true)]
+	[Library("aibox_npc_base", Title = "AIBox NPC Base", Description = "AI Base used to create NPCs.", Icon = "person", Spawnable = true)]
 	public partial class AIBoxNPC : AnimEntity {
 		//[ConVar.Replicated]
 		//public static bool nav_drawpath { get; set; }
-
-		[ServerCmd("npc_clear")]
-		public static void NpcClear() {
-			foreach (var npc in Entity.All.OfType<AIBoxNPC>().ToArray())
-				npc.Delete();
-		}
+		//public Sandbox.Debug.Draw Draw => Sandbox.Debug.Draw.Once;
 
 		float Speed;
-
+		Vector3 InputVelocity;
+		Vector3 LookDir;
 		AIBoxNavPath Path = new AIBoxNavPath();
 		public AIBoxNavSteer Steer;
+
+		public AIBoxNPC() {
+			Owner = null;
+		}
+		public AIBoxNPC(Player creator = null) {
+			Owner = creator;
+		}
+
+		private async void InitialSetup() {
+			await Task.Delay(100);
+			if (this.IsValid()) {
+				Log.Info("Owner:" + Owner);
+				PlaySound("vj.playerspawn");
+			}
+		}
 
 		public override void Spawn() {
 			base.Spawn();
@@ -27,7 +35,7 @@ namespace AIBox {
 			SetModel("models/citizen/citizen.vmdl");
 			EyePos = Position + Vector3.Up * 64;
 			CollisionGroup = CollisionGroup.Player;
-			SetupPhysicsFromCapsule(PhysicsMotionType.Keyframed, Capsule.FromHeightAndRadius(72, 8));
+			SetupPhysicsFromCapsule(PhysicsMotionType.Keyframed, Capsule.FromHeightAndRadius(72, 10));
 
 			EnableHitboxes = true;
 
@@ -47,13 +55,9 @@ namespace AIBox {
 			SetBodyGroup(1, 0);
 
 			Speed = Rand.Float(100, 300);
+
+			InitialSetup();
 		}
-
-		//public Sandbox.Debug.Draw Draw => Sandbox.Debug.Draw.Once;
-
-		Vector3 InputVelocity;
-
-		Vector3 LookDir;
 
 		[Event.Tick.Server]
 		public void Tick() {

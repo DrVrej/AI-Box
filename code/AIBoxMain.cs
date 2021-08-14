@@ -1,5 +1,6 @@
 
 using Sandbox;
+using System.Linq;
 
 namespace AIBox {
 	public partial class AIBoxMain : Sandbox.Game {
@@ -21,6 +22,12 @@ namespace AIBox {
 
 			player.Respawn();
 		}
-	}
 
+		// Remove all AIBox NPCs
+		[ServerCmd("aibox_npc_clear")]
+		public static void NpcClear() {
+			foreach (var npc in Entity.All.OfType<AIBoxNPC>().ToArray())
+				npc.Delete();
+		}
+	}
 }

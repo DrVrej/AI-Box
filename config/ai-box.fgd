@@ -1,7 +1,7 @@
 // 
 // AIBox.AIBoxNPC : Sandbox.AnimEntity 
 // 
-@PointClass = npc_test : ""
+@PointClass = aibox_npc_base : "AI Base used to create NPCs."
 [
 	targetname(target_source) : "Name" : : "The name that other entities refer to this entity by."
 	parentname(target_destination) [ group="Hierarchy" ] : "Parent" : : "The name of this entity's parent in the movement hierarchy. Entities with parents move with their parent."

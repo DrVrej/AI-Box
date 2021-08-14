@@ -1,11 +1,12 @@
 ﻿using Sandbox;
-using Steamworks;
-using System;
-using System.Buffers;
 
 namespace AIBox {
 	public class AIBoxNavSteer {
 		protected AIBoxNavPath Path { get; private set; }
+		public Vector3 Target { get; set; }
+		public AIBoxNavSteerOutput Output;
+		public float MinRadius { get; set; } = 200;
+		public float MaxRadius { get; set; } = 500;
 
 		public AIBoxNavSteer() {
 			Path = new AIBoxNavPath();
@@ -42,9 +43,6 @@ namespace AIBox {
 			*/
 		}
 
-		public float MinRadius { get; set; } = 200;
-		public float MaxRadius { get; set; } = 500;
-
 		public virtual bool FindNewTarget(Vector3 center) {
 			var t = NavMesh.GetPointWithinRadius(center, MinRadius, MaxRadius);
 			if (t.HasValue) {
@@ -77,20 +75,15 @@ namespace AIBox {
 			return avoidance;
 		}
 
+		public struct AIBoxNavSteerOutput {
+			public bool Finished;
+			public Vector3 Direction;
+		}
+
 		/*public virtual void DebugDrawPath() {
 			using (Sandbox.Debug.Profile.Scope("Path Debug Draw")) {
 				Path.DebugDraw(0.1f, 0.1f);
 			}
 		}*/
-
-		public Vector3 Target { get; set; }
-
-		public AIBoxNavSteerOutput Output;
-
-
-		public struct AIBoxNavSteerOutput {
-			public bool Finished;
-			public Vector3 Direction;
-		}
 	}
 }

@@ -34,9 +34,10 @@ namespace AIBox {
 					.Size(20)
 					.Run();
 				Log.Info(tr);
-				var npc = new AIBoxNPC {
+
+				var npc = new AIBoxNPC(this) {
 					Position = tr.EndPos,
-					Rotation = Rotation.LookAt(EyeRot.Backward.WithZ(0))
+					Rotation = Rotation.LookAt(EyeRot.Backward.WithZ(0)),
 				};
 			}
 		}
