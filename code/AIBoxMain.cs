@@ -23,11 +23,22 @@ namespace AIBox {
 			player.Respawn();
 		}
 
-		// Remove all AIBox NPCs
+		// Remove AIBox NPCs created by me
 		[ServerCmd("aibox_npc_clear")]
-		public static void NpcClear() {
-			foreach (var npc in Entity.All.OfType<AIBoxNPC>().ToArray())
+		public static void AIBox_NPC_Clear() {
+			foreach (var npc in Entity.All.OfType<AIBoxNPC>().ToArray()) {
+				if ((npc.Owner != null) && (ConsoleSystem.Caller == npc.Owner.GetClientOwner())) {
+					npc.Delete();
+				}
+			}
+		}
+
+		// Remove all AIBox NPCs
+		[ServerCmd("aibox_npc_clear_all")]
+		public static void AIBox_NPC_Clear_All() {
+			foreach (var npc in Entity.All.OfType<AIBoxNPC>().ToArray()) {
 				npc.Delete();
+			}
 		}
 	}
 }

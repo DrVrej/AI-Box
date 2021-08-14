@@ -55,6 +55,7 @@ namespace AIBox {
 			SetBodyGroup(1, 0);
 
 			Speed = Rand.Float(100, 300);
+			Health = 100;
 
 			InitialSetup();
 		}
