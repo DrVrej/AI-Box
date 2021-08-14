@@ -58,13 +58,13 @@ namespace AIBox {
 
 		public virtual bool FindNewTarget(Vector3 center) {
 			Entity closest = null;
-      foreach (var ply in Entity.All.OfType<Player>().ToArray()) {
-        if (ply.Health <= 0) continue;
-        if (closest == null || center.Distance(closest.Position) > center.Distance(ply.Position)) {
-          closest = ply;
-        }
-      }
-      if (closest == null) {
+			foreach (var ply in Entity.All.OfType<Player>().ToArray()) {
+				if (ply.Health <= 0) continue;
+				if (closest == null || center.Distance(closest.Position) > center.Distance(ply.Position)) {
+					closest = ply;
+				}
+			}
+			if (closest == null) {
 				//Target = null;
 				return false;
 			} else {

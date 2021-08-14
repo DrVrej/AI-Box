@@ -49,10 +49,6 @@ namespace AIBox {
 
 			this.SetMaterialGroup(Rand.Int(0, 3));
 
-			new ModelEntity("models/citizen_clothes/trousers/trousers.smart.vmdl", this);
-			new ModelEntity("models/citizen_clothes/jacket/labcoat.vmdl", this);
-			new ModelEntity("models/citizen_clothes/shirt/shirt_longsleeve.scientist.vmdl", this);
-
 			if (Rand.Int(3) == 1) {
 				new ModelEntity("models/citizen_clothes/hair/hair_femalebun.black.vmdl", this);
 			} else if (Rand.Int(10) == 1) {
@@ -65,7 +61,6 @@ namespace AIBox {
 			Speed = Rand.Float(100, 300);
 			Scale = Rand.Float(0.9f, 1.2f);
 			Steer = new AIBoxNavSteer();
-
 
 			InitialSetup();
 		}

@@ -16,7 +16,16 @@ namespace AIBox {
 			EnableDrawing = true;
 			EnableHideInFirstPerson = true;
 			EnableShadowInFirstPerson = true;
+			var clothing1 = new ModelEntity("models/citizen_clothes/trousers/trousers.smart.vmdl", this);
+			clothing1.EnableHideInFirstPerson = true;
+			var clothing2 = new ModelEntity("models/citizen_clothes/jacket/labcoat.vmdl", this);
+			clothing2.EnableHideInFirstPerson = true;
+			var clothing3 = new ModelEntity("models/citizen_clothes/shirt/shirt_longsleeve.scientist.vmdl", this);
+			clothing3.Parent = this;
+			clothing3.EnableHideInFirstPerson = true;
 			base.Respawn();
+
+			Scale = Rand.Float(0.6f, 1.8f);
 			Log.Info("Player has spawned!");
 			PlaySound("vj.playerspawn");
 		}
@@ -39,6 +48,14 @@ namespace AIBox {
 					Position = tr.EndPos,
 					Rotation = Rotation.LookAt(EyeRot.Backward.WithZ(0)),
 				};
+			}
+			// Thirdperson
+			if (Input.Pressed(InputButton.View)) {
+				if (Camera is FirstPersonCamera) {
+					Camera = new ThirdPersonCamera();
+				} else {
+					Camera = new FirstPersonCamera();
+				}
 			}
 		}
 
