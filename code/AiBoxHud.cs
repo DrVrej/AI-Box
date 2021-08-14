@@ -7,7 +7,7 @@ namespace AIBox {
 
 		public AIBoxHud() {
 			if (IsClient) {
-				RootPanel.SetTemplate("/aiboxhud.html");
+				RootPanel.StyleSheet.Load("/aiboxhud.scss");
 				RootPanel.AddChild<NameTags>();
 				RootPanel.AddChild<CrosshairCanvas>();
 				RootPanel.AddChild<ChatBox>();
