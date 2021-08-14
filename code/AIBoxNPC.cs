@@ -8,6 +8,13 @@ namespace AIBox {
 		//public static bool nav_drawpath { get; set; }
 		//public Sandbox.Debug.Draw Draw => Sandbox.Debug.Draw.Once;
 
+		public enum STATE : int {
+			IDLE = 0,
+			ALERT = 1,
+			FROZEN = 2,
+		}
+		public STATE State = STATE.IDLE;
+
 		float Speed;
 		Vector3 InputVelocity;
 		Vector3 LookDir;
@@ -32,6 +39,7 @@ namespace AIBox {
 		public override void Spawn() {
 			base.Spawn();
 
+			//SetModel("models/characters/combine_soldier/combine_soldier_new_content.vmdl_c");
 			SetModel("models/citizen/citizen.vmdl");
 			EyePos = Position + Vector3.Up * 64;
 			CollisionGroup = CollisionGroup.Player;
@@ -47,16 +55,17 @@ namespace AIBox {
 
 			if (Rand.Int(3) == 1) {
 				new ModelEntity("models/citizen_clothes/hair/hair_femalebun.black.vmdl", this);
-			}
-			else if (Rand.Int(10) == 1) {
+			} else if (Rand.Int(10) == 1) {
 				new ModelEntity("models/citizen_clothes/hat/hat_hardhat.vmdl", this);
 			}
 
 			SetBodyGroup(1, 0);
 
-			Speed = Rand.Float(100, 300);
 			Health = 100;
-			Scale = Rand.Float(0.8f, 1.4f);
+			Speed = Rand.Float(100, 300);
+			Scale = Rand.Float(0.9f, 1.2f);
+			Steer = new AIBoxNavSteer();
+
 
 			InitialSetup();
 		}
@@ -68,6 +77,11 @@ namespace AIBox {
 			InputVelocity = 0;
 
 			if (Steer != null) {
+				if (State == STATE.IDLE && !Steer.Wander) {
+					Steer.Wander = true;
+					Steer.FindNewTarget(Position);
+				}
+
 				//using var _b = Sandbox.Debug.Profile.Scope("Steer");
 
 				Steer.Tick(Position);
@@ -138,12 +152,10 @@ namespace AIBox {
 					move.ApplyFriction(tr.Surface.Friction * 10.0f, timeDelta);
 					move.Velocity += movement * InputVelocity.Normal;
 
-				}
-				else {
+				} else {
 					move.ApplyFriction(tr.Surface.Friction * 10.0f, timeDelta);
 				}
-			}
-			else {
+			} else {
 				GroundEntity = null;
 				move.Velocity += Vector3.Down * 900 * timeDelta;
 				//Sandbox.Debug.Draw.Once.WithColor(Color.Red).Circle(Position, Vector3.Up, 10.0f);

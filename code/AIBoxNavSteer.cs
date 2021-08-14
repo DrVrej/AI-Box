@@ -5,6 +5,7 @@ namespace AIBox {
 		protected AIBoxNavPath Path { get; private set; }
 		public Vector3 Target { get; set; }
 		public AIBoxNavSteerOutput Output;
+		public bool Wander = false;
 		public float MinRadius { get; set; } = 200;
 		public float MaxRadius { get; set; } = 500;
 
@@ -17,11 +18,22 @@ namespace AIBox {
 			Path.Update(currentPosition, Target);
 			//}
 
+			Log.Info(Path.IsEmpty);
 			Output.Finished = Path.IsEmpty;
 
 			if (Output.Finished) {
 				Output.Direction = Vector3.Zero;
-				return;
+
+				// For wandering
+				if (Wander == true) {
+					Log.Info("Wandering");
+					if (Path.IsEmpty) {
+						Log.Info("EMPTY");
+						FindNewTarget(currentPosition);
+					}
+				} else { // If not wandering, then just return!
+					return;
+				}
 			}
 
 			//using (Sandbox.Debug.Profile.Scope("Update Direction")) {
@@ -32,15 +44,6 @@ namespace AIBox {
 			if (!avoid.IsNearlyZero()) {
 				Output.Direction = (Output.Direction + avoid).Normal;
 			}
-
-			// For wandering
-			/*
-			base.Tick(position);
-
-			if (Path.IsEmpty) {
-				FindNewTarget(position);
-			}
-			*/
 		}
 
 		public virtual bool FindNewTarget(Vector3 center) {
