@@ -1,4 +1,5 @@
 ﻿using Sandbox;
+using System.Linq;
 
 namespace AIBox {
 	public class AIBoxNavSteer {
@@ -46,13 +47,30 @@ namespace AIBox {
 			}
 		}
 
-		public virtual bool FindNewTarget(Vector3 center) {
+		/*public virtual bool FindNewTarget(Vector3 center) {
 			var t = NavMesh.GetPointWithinRadius(center, MinRadius, MaxRadius);
 			if (t.HasValue) {
 				Target = t.Value;
 			}
 
 			return t.HasValue;
+		}*/
+
+		public virtual bool FindNewTarget(Vector3 center) {
+			Entity closest = null;
+      foreach (var ply in Entity.All.OfType<Player>().ToArray()) {
+        if (ply.Health <= 0) continue;
+        if (closest == null || center.Distance(closest.Position) > center.Distance(ply.Position)) {
+          closest = ply;
+        }
+      }
+      if (closest == null) {
+				//Target = null;
+				return false;
+			} else {
+				Target = closest.Position;
+				return true;
+			}
 		}
 
 		Vector3 GetAvoidance(Vector3 position, float radius) {
