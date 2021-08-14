@@ -28,7 +28,7 @@ namespace AIBox {
 		[ServerCmd("aibox_npc_clear")]
 		public static void AIBox_NPC_Clear() {
 			short i = 0;
-			foreach (var npc in Entity.All.OfType<AIBoxNPC>().ToArray()) {
+			foreach (var npc in Entity.All.OfType<AIBoxNPC>()) {
 				if ((npc.Owner != null) && (ConsoleSystem.Caller == npc.Owner.GetClientOwner())) {
 					i++;
 					npc.Delete();
@@ -41,7 +41,7 @@ namespace AIBox {
 		[ServerCmd("aibox_npc_clear_all")]
 		public static void AIBox_NPC_Clear_All() {
 			short i = 0;
-			foreach (var npc in Entity.All.OfType<AIBoxNPC>().ToArray()) {
+			foreach (var npc in Entity.All.OfType<AIBoxNPC>()) {
 				i++;
 				npc.Delete();
 			}
