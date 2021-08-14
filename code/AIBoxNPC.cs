@@ -56,6 +56,7 @@ namespace AIBox {
 
 			Speed = Rand.Float(100, 300);
 			Health = 100;
+			Scale = Rand.Float(0.8f, 1.4f);
 
 			InitialSetup();
 		}
