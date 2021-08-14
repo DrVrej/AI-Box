@@ -8,6 +8,7 @@ namespace AIBox {
 		public AIBoxMain() {
 			if (IsServer) {
 				Log.Info("Gamemode Has Created Serverside!");
+				new AIBoxHud();
 			}
 			else if (IsClient) {
 				Log.Info("Gamemode Has Created Clientside!");
