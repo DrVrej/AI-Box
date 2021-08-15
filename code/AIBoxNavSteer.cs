@@ -15,9 +15,9 @@ namespace AIBox {
 		}
 
 		public virtual void Tick(Vector3 currentPosition) {
-			//using (Sandbox.Debug.Profile.Scope("Update Path")) {
-			Path.Update(currentPosition, Target);
-			//}
+			if (Target != null) {
+				Path.Update(currentPosition, Target);
+			}
 
 			Log.Info(Path.IsEmpty);
 			Output.Finished = Path.IsEmpty;
@@ -27,16 +27,14 @@ namespace AIBox {
 
 				// For wandering
 				if (Wander == true) {
-					Log.Info("Wandering");
 					if (Path.IsEmpty) {
-						Log.Info("EMPTY");
-						FindNewTarget(currentPosition);
+						FindNewTarget_Wander(currentPosition);
 					}
 				} else { // If not wandering, then just return!
 					return;
 				}
 			}
-
+			Log.Info(currentPosition);
 			//using (Sandbox.Debug.Profile.Scope("Update Direction")) {
 			Output.Direction = Path.GetDirection(currentPosition);
 			//}
@@ -47,16 +45,16 @@ namespace AIBox {
 			}
 		}
 
-		/*public virtual bool FindNewTarget(Vector3 center) {
+		public virtual bool FindNewTarget_Wander(Vector3 center) {
 			var t = NavMesh.GetPointWithinRadius(center, MinRadius, MaxRadius);
 			if (t.HasValue) {
 				Target = t.Value;
 			}
 
 			return t.HasValue;
-		}*/
+		}
 
-		public virtual bool FindNewTarget(Vector3 center) {
+		public virtual bool FindNewTarget_Chase(Vector3 center) {
 			Entity closest = null;
 			foreach (var ply in Entity.All.OfType<Player>().ToArray()) {
 				if (ply.Health <= 0) continue;

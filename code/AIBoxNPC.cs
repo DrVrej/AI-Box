@@ -15,18 +15,11 @@ namespace AIBox {
 		}
 		public STATE State = STATE.IDLE;
 
-		float Speed;
+		protected float Speed;
 		Vector3 InputVelocity;
 		Vector3 LookDir;
 		AIBoxNavPath Path = new AIBoxNavPath();
 		public AIBoxNavSteer Steer;
-
-		public AIBoxNPC() {
-			Owner = null;
-		}
-		public AIBoxNPC(Player creator = null) {
-			Owner = creator;
-		}
 
 		private async void InitialSetup() {
 			await Task.Delay(100);
@@ -38,29 +31,10 @@ namespace AIBox {
 
 		public override void Spawn() {
 			base.Spawn();
+			Steer = new AIBoxNavSteer();
 
 			//SetModel("models/characters/combine_soldier/combine_soldier_new_content.vmdl_c");
-			SetModel("models/citizen/citizen.vmdl");
-			EyePos = Position + Vector3.Up * 64;
-			CollisionGroup = CollisionGroup.Player;
-			SetupPhysicsFromCapsule(PhysicsMotionType.Keyframed, Capsule.FromHeightAndRadius(72, 10));
-
-			EnableHitboxes = true;
-
-			this.SetMaterialGroup(Rand.Int(0, 3));
-
-			if (Rand.Int(3) == 1) {
-				new ModelEntity("models/citizen_clothes/hair/hair_femalebun.black.vmdl", this);
-			} else if (Rand.Int(10) == 1) {
-				new ModelEntity("models/citizen_clothes/hat/hat_hardhat.vmdl", this);
-			}
-
-			SetBodyGroup(1, 0);
-
-			Health = 100;
-			Speed = Rand.Float(100, 300);
-			Scale = Rand.Float(0.9f, 1.2f);
-			Steer = new AIBoxNavSteer();
+			//SetModel("models/citizen/citizen.vmdl");
 
 			InitialSetup();
 		}
@@ -72,12 +46,10 @@ namespace AIBox {
 			InputVelocity = 0;
 
 			if (Steer != null) {
+				// Wander around
 				if (State == STATE.IDLE && !Steer.Wander) {
 					Steer.Wander = true;
-					Steer.FindNewTarget(Position);
 				}
-
-				//using var _b = Sandbox.Debug.Profile.Scope("Steer");
 
 				Steer.Tick(Position);
 
@@ -91,9 +63,7 @@ namespace AIBox {
 				}*/
 			}
 
-			//using (Sandbox.Debug.Profile.Scope("Move")) {
 			Move(Time.Delta);
-			//}
 
 			var walkVelocity = Velocity.WithZ(0);
 			if (walkVelocity.Length > 0.5f) {

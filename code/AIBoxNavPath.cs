@@ -56,6 +56,8 @@ namespace AIBox {
 		public Vector3 GetDirection(Vector3 position) {
 			if (Points.Count == 1) {
 				return (Points[0] - position).WithZ(0).Normal;
+			} else if (Points.Count == 0) {
+				return position;
 			}
 			return (Points[1] - position).WithZ(0).Normal;
 		}
