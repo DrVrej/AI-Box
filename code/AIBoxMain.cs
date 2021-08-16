@@ -3,14 +3,13 @@ using Sandbox;
 using System.Linq;
 
 namespace AIBox {
-	public partial class AIBoxMain : Sandbox.Game {
+	public partial class AIBoxMain : Game {
 		// Constructor
 		public AIBoxMain() {
 			if (IsServer) {
 				Log.Info("Gamemode Has Created Serverside!");
 				new AIBoxHud();
-			}
-			else if (IsClient) {
+			} else if (IsClient) {
 				Log.Info("Gamemode Has Created Clientside!");
 			}
 		}
@@ -20,7 +19,6 @@ namespace AIBox {
 
 			var player = new AIBoxPlayer();
 			client.Pawn = player;
-
 			player.Respawn();
 		}
 

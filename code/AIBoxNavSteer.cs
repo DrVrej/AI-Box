@@ -19,7 +19,6 @@ namespace AIBox {
 				Path.Update(currentPosition, Target);
 			}
 
-			Log.Info(Path.IsEmpty);
 			Output.Finished = Path.IsEmpty;
 
 			if (Output.Finished) {
@@ -34,10 +33,8 @@ namespace AIBox {
 					return;
 				}
 			}
-			Log.Info(currentPosition);
-			//using (Sandbox.Debug.Profile.Scope("Update Direction")) {
+
 			Output.Direction = Path.GetDirection(currentPosition);
-			//}
 
 			var avoid = GetAvoidance(currentPosition, 500);
 			if (!avoid.IsNearlyZero()) {
@@ -57,7 +54,7 @@ namespace AIBox {
 		public virtual bool FindNewTarget_Chase(Vector3 center) {
 			Entity closest = null;
 			foreach (var ply in Entity.All.OfType<Player>().ToArray()) {
-				if (ply.Health <= 0) continue;
+				if (ply.LifeState != LifeState.Alive) continue;
 				if (closest == null || center.Distance(closest.Position) > center.Distance(ply.Position)) {
 					closest = ply;
 				}

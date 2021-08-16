@@ -32,6 +32,7 @@ namespace AIBox {
 		public override void Spawn() {
 			base.Spawn();
 			Steer = new AIBoxNavSteer();
+			Tags.Add("NPC", "AIBox");
 
 			//SetModel("models/characters/combine_soldier/combine_soldier_new_content.vmdl_c");
 			//SetModel("models/citizen/citizen.vmdl");
