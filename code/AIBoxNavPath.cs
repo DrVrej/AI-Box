@@ -4,7 +4,7 @@ using System.Collections.Generic;
 namespace AIBox {
 	public class AIBoxNavPath {
 		public Vector3 TargetPosition;
-		public List<Vector3> Points = new List<Vector3>();
+		public List<Vector3> Points = new List<Vector3>(); // List of Points the NPC is navigating to right now
 
 		public bool IsEmpty => Points.Count <= 1;
 

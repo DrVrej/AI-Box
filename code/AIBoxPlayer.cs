@@ -17,14 +17,18 @@ namespace AIBox {
 			EnableDrawing = true;
 			EnableHideInFirstPerson = true;
 			EnableShadowInFirstPerson = true;
-			var clothing1 = new ModelEntity("models/citizen_clothes/trousers/trousers.lab.vmdl", this);
-			clothing1.EnableHideInFirstPerson = true;
-			var clothing2 = new ModelEntity("models/citizen_clothes/jacket/labcoat.vmdl", this);
-			clothing2.EnableHideInFirstPerson = true;
-			var clothing3 = new ModelEntity("models/citizen_clothes/shoes/smartshoes/smartshoes.vmdl", this);
-			clothing3.EnableHideInFirstPerson = true;
-			var clothing4 = new ModelEntity("models/citizen_clothes/gloves/gloves_workgloves.vmdl", this);
-			clothing4.EnableHideInFirstPerson = true;
+			new ModelEntity("models/citizen_clothes/trousers/trousers.lab.vmdl", this) {
+				EnableHideInFirstPerson = true,
+			};
+			new ModelEntity("models/citizen_clothes/jacket/labcoat.vmdl", this) {
+				EnableHideInFirstPerson = true,
+			};
+			new ModelEntity("models/citizen_clothes/shoes/smartshoes/smartshoes.vmdl", this) {
+				EnableHideInFirstPerson = true,
+			};
+			new ModelEntity("models/citizen_clothes/gloves/gloves_workgloves.vmdl", this) {
+				EnableHideInFirstPerson = true,
+			};
 			base.Respawn();
 
 			Inventory.Add(new PhysGun(), true);
@@ -39,25 +43,27 @@ namespace AIBox {
 			base.Simulate(cl);
 			SimulateActiveChild(cl, ActiveChild); // If you have active children (like a weapon etc) you should call this to simulate those too.
 
-			// Handle Attack1
-			if (IsServer && Input.Pressed(InputButton.Attack1)) {
-				if (Health <= 0) {
-					Respawn();
+			if (IsServer) {
+				// Handle Attack1
+				if (Input.Pressed(InputButton.Attack1)) {
+					if (Health <= 0) {
+						Respawn();
+					}
 				}
-			}
 
-			// Handle Attack2
-			if (IsServer && Input.Pressed(InputButton.Attack2)) {
-				if (LifeState == LifeState.Alive) {
-					var tr = Trace.Ray(EyePos, EyePos + EyeRot.Forward * 1000)
-						.Ignore(this)
-						.Size(20)
-						.Run();
-					new AIBoxNPCDefault() {
-						Position = tr.EndPos,
-						Rotation = Rotation.LookAt(EyeRot.Backward.WithZ(0)),
-						Owner = this,
-					};
+				// Handle Attack2
+				if (Input.Pressed(InputButton.Attack2)) {
+					if (LifeState == LifeState.Alive) {
+						var tr = Trace.Ray(EyePos, EyePos + EyeRot.Forward * 1000)
+							.Ignore(this)
+							.Size(20)
+							.Run();
+						new AIBoxNPCDefault() {
+							Position = tr.EndPos,
+							Rotation = Rotation.LookAt(EyeRot.Backward.WithZ(0)),
+							Owner = this,
+						};
+					}
 				}
 			}
 

@@ -18,7 +18,6 @@ namespace AIBox {
 		protected float Speed;
 		Vector3 InputVelocity;
 		Vector3 LookDir;
-		AIBoxNavPath Path = new AIBoxNavPath();
 		public AIBoxNavSteer Steer;
 
 		private async void InitialSetup() {
@@ -114,7 +113,7 @@ namespace AIBox {
 
 				if (InputVelocity.Length > 0) {
 					var movement = move.Velocity.Dot(InputVelocity.Normal);
-					move.Velocity = move.Velocity - movement * InputVelocity.Normal;
+					move.Velocity -= movement * InputVelocity.Normal;
 					move.ApplyFriction(tr.Surface.Friction * 10.0f, timeDelta);
 					move.Velocity += movement * InputVelocity.Normal;
 
