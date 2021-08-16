@@ -52,11 +52,11 @@ namespace AIBox {
 				}
 
 				// Handle Attack2
-				if (Input.Pressed(InputButton.Attack2)) {
+				if (Input.Pressed(InputButton.Slot1)) {
 					if (LifeState == LifeState.Alive) {
 						var tr = Trace.Ray(EyePos, EyePos + EyeRot.Forward * 1000)
 							.Ignore(this)
-							.Size(20)
+							.Size(10)
 							.Run();
 						new NPC_Citizen() {
 							Position = tr.EndPos,

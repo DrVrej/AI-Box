@@ -3,56 +3,69 @@ using System.Linq;
 using System.Collections.Generic;
 
 namespace AIBox {
-	public class NPCNav {
-		public struct AIBoxNavSteerOutput {
-			public bool Finished;
-			public Vector3 Direction;
-		}
+	public enum NAV_STATE {
+		NONE,
+		WANDER,
+		CHASE,
+	}
 
-		public Vector3 Target { get; set; }
-		public AIBoxNavSteerOutput Output;
-		public bool Wander = false;
+	public class NPCNav {
+		public NAV_STATE CurNavState = NAV_STATE.NONE; // The current navigation state (Usually set by the NPC)
+
+		public Vector3 Goal { get; set; }
+		public Vector3 CurGoalPos;
+		public List<Vector3> GoalPoints = new List<Vector3>(); // List of GoalPoints the NPC is navigating to right now
+		public Vector3 GoalDir;
+		public bool IsGoalFinished => GoalPoints.Count <= 1;
+
 		public float MinRadius { get; set; } = 200;
 		public float MaxRadius { get; set; } = 500;
 
-		public Vector3 TargetPosition;
-		public List<Vector3> Points = new List<Vector3>(); // List of Points the NPC is navigating to right now
-		public bool IsEmpty => Points.Count <= 1;
+		public float NextWanderTime { get; set; } = 0.0f;
 
 		public NPCNav() { }
 
 		public virtual void Tick(Vector3 currentPosition) {
-			if (Target != null) {
-				Update(currentPosition, Target);
+			/*Log.Info("Current Goal: " + GoalPoints.Count + " || " + CurGoalPos + " || Finished? " + IsGoalFinished);
+			Log.Info(Goal);
+			for (int i = 0; i < GoalPoints.Count; i++) {
+				Log.Info($"      GoalPoints[{i}]: {GoalPoints[i].ToString()}");
+			}*/
+
+			if (Goal != null) {
+				UpdateGoal(currentPosition, Goal);
 			}
 
-			Output.Finished = IsEmpty;
-
-			if (Output.Finished) {
-				Output.Direction = Vector3.Zero;
+			if (IsGoalFinished) {
+				GoalDir = Vector3.Zero;
 
 				// For wandering
-				if (Wander == true) {
-					if (IsEmpty) {
+				if (CurNavState == NAV_STATE.WANDER) {
+					if (NextWanderTime <= Time.Now) {
 						FindNewTarget_Wander(currentPosition);
+						NextWanderTime = Time.Now + Rand.Float(3.0f, 10.0f);
 					}
+				} else if (CurNavState == NAV_STATE.CHASE) {
+					FindNewTarget_Chase(currentPosition);
 				} else { // If not wandering, then just return!
 					return;
 				}
 			}
 
-			Output.Direction = GetDirection(currentPosition);
+			GoalDir = GetDirection(currentPosition);
 
-			var avoid = GetAvoidance(currentPosition, 500);
+			var avoid = GetAvoidance(currentPosition, 300);
 			if (!avoid.IsNearlyZero()) {
-				Output.Direction = (Output.Direction + avoid).Normal;
+				GoalDir = (GoalDir + avoid).Normal;
 			}
+
+			DebugDraw(0.1f, 0.1f);
 		}
 
 		public virtual bool FindNewTarget_Wander(Vector3 center) {
 			var t = NavMesh.GetPointWithinRadius(center, MinRadius, MaxRadius);
 			if (t.HasValue) {
-				Target = t.Value;
+				Goal = t.Value;
 			}
 
 			return t.HasValue;
@@ -67,42 +80,43 @@ namespace AIBox {
 				}
 			}
 			if (closest == null) {
-				//Target = null;
+				//Goal = null;
 				return false;
 			} else {
-				Target = closest.Position;
+				Goal = closest.Position;
 				return true;
 			}
 		}
 
 		Vector3 GetAvoidance(Vector3 position, float radius) {
-			var center = position + Output.Direction * radius * 0.5f;
+			var center = position + GoalDir * radius * 0.5f;
 
 			var objectRadius = 200.0f;
 			Vector3 avoidance = default;
 
+			var avoidProps = GoalPoints.Count > 2;
 			foreach (var ent in Physics.GetEntitiesInSphere(center, radius)) {
-				if (ent is not NPC) continue;
 				if (ent.IsWorld) continue;
-
-				var delta = (position - ent.Position).WithZ(0);
-				var closeness = delta.Length;
-				if (closeness < 0.001f) continue;
-				var thrust = ((objectRadius - closeness) / objectRadius).Clamp(0, 1);
-				if (thrust <= 0) continue;
-
-				//avoidance += delta.Cross( Output.Direction ).Normal * thrust * 2.5f;
-				avoidance += delta.Normal * thrust * thrust;
+				if ((ent is NPC or Player) || (avoidProps && ent is Prop)) {
+					var delta = (position - ent.Position).WithZ(0);
+					var closeness = delta.Length;
+					if (closeness < 0.001f) continue;
+					var thrust = ((objectRadius - closeness) / objectRadius).Clamp(0, 1);
+					if (thrust <= 0) continue;
+					//avoidance += delta.Cross( GoalDir ).Normal * thrust * 2.5f;
+					avoidance += delta.Normal * thrust * thrust;
+					//Log.Info(ent + "   " + avoidance.Length);
+				}
 			}
 
 			return avoidance;
 		}
 
-		public void Update(Vector3 from, Vector3 to) {
+		public void UpdateGoal(Vector3 from, Vector3 to) {
 			bool needsBuild = false;
 
-			if (!TargetPosition.IsNearlyEqual(to, 5)) {
-				TargetPosition = to;
+			if (!CurGoalPos.IsNearlyEqual(to, 5)) {
+				CurGoalPos = to;
 				needsBuild = true;
 			}
 
@@ -110,52 +124,64 @@ namespace AIBox {
 				var from_fixed = NavMesh.GetClosestPoint(from);
 				var tofixed = NavMesh.GetClosestPoint(to);
 
-				Points.Clear();
+				GoalPoints.Clear();
 				NavMesh.GetClosestPoint(from);
-				NavMesh.BuildPath(from_fixed.Value, tofixed.Value, Points);
-				//Points.Add( NavMesh.GetClosestPoint( to ) );
+				NavMesh.BuildPath(from_fixed.Value, tofixed.Value, GoalPoints);
+				//GoalPoints.Add( NavMesh.GetClosestPoint( to ) );
 			}
 
-			if (Points.Count <= 1) {
+			if (GoalPoints.Count <= 1) {
 				return;
 			}
 
-			var deltaToCurrent = from - Points[0];
-			var deltaToNext = from - Points[1];
-			var delta = Points[1] - Points[0];
+			var deltaToCurrent = from - GoalPoints[0];
+			var deltaToNext = from - GoalPoints[1];
+			var delta = GoalPoints[1] - GoalPoints[0];
 			var deltaNormal = delta.Normal;
 
 			if (deltaToNext.WithZ(0).Length < 20) {
-				Points.RemoveAt(0);
+				GoalPoints.RemoveAt(0);
 				return;
 			}
 
 			// If we're in front of this line then
 			// remove it and move on to next one
 			if (deltaToNext.Normal.Dot(deltaNormal) >= 1.0f) {
-				Points.RemoveAt(0);
+				GoalPoints.RemoveAt(0);
 			}
 		}
 
 		public float Distance(int point, Vector3 from) {
-			if (Points.Count <= point) return float.MaxValue;
+			if (GoalPoints.Count <= point) return float.MaxValue;
 
-			return Points[point].WithZ(from.z).Distance(from);
+			return GoalPoints[point].WithZ(from.z).Distance(from);
 		}
 
 		public Vector3 GetDirection(Vector3 position) {
-			if (Points.Count == 1) {
-				return (Points[0] - position).WithZ(0).Normal;
-			} else if (Points.Count == 0) {
+			if (GoalPoints.Count == 1) {
+				return (GoalPoints[0] - position).WithZ(0).Normal;
+			} else if (GoalPoints.Count == 0) {
 				return position;
 			}
-			return (Points[1] - position).WithZ(0).Normal;
+			return (GoalPoints[1] - position).WithZ(0).Normal;
 		}
 
-		/*public virtual void DebugDrawPath() {
-			using (Sandbox.Debug.Profile.Scope("Path Debug Draw")) {
-				DebugDraw(0.1f, 0.1f);
+		public void DebugDraw(float time, float opacity = 1.0f) {
+			var draw = Sandbox.Debug.Draw.ForSeconds(time);
+			var lift = Vector3.Up * 2;
+
+			draw.WithColor(Color.White.WithAlpha(opacity)).Circle(lift + CurGoalPos, Vector3.Up, 20.0f);
+
+			int i = 0;
+			var lastPoint = Vector3.Zero;
+			foreach (var point in GoalPoints) {
+				if (i > 0) {
+					draw.WithColor(i == 1 ? Color.Green.WithAlpha(opacity) : Color.Cyan.WithAlpha(opacity)).Arrow(lastPoint + lift, point + lift, Vector3.Up, 5.0f);
+				}
+
+				lastPoint = point;
+				i++;
 			}
-		}*/
+		}
 	}
 }

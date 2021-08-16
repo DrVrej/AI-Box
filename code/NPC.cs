@@ -2,11 +2,10 @@
 using System.Threading.Tasks;
 
 namespace AIBox {
-	[Library("aibox_npc_base", Title = "AIBox NPC Base", Description = "AI Base used to create NPCs.", Icon = "person", Spawnable = true)]
+	//[Library("aibox_npc_base", Title = "AIBox NPC Base", Description = "AI Base used to create NPCs.", Icon = "person", Spawnable = true)]
 	public partial class NPC : AnimEntity {
 		//[ConVar.Replicated]
 		//public static bool nav_drawpath { get; set; }
-		//public Sandbox.Debug.Draw Draw => Sandbox.Debug.Draw.Once;
 
 		public enum STATE : int {
 			IDLE = 0,
@@ -18,7 +17,7 @@ namespace AIBox {
 		protected float Speed;
 		Vector3 InputVelocity;
 		Vector3 LookDir;
-		public NPCNav Steer;
+		public NPCNav Nav;
 
 		private async void InitialSetup() {
 			await Task.Delay(100);
@@ -30,7 +29,7 @@ namespace AIBox {
 
 		public override void Spawn() {
 			base.Spawn();
-			Steer = new NPCNav();
+			Nav = new NPCNav();
 			Tags.Add("NPC", "AIBox");
 
 			//SetModel("models/characters/combine_soldier/combine_soldier_new_content.vmdl_c");
@@ -45,21 +44,21 @@ namespace AIBox {
 
 			InputVelocity = 0;
 
-			if (Steer != null) {
+			if (Nav != null) {
 				// Wander around
-				if (State == STATE.IDLE && !Steer.Wander) {
-					Steer.Wander = true;
+				if (State == STATE.IDLE) {
+					Nav.CurNavState = NAV_STATE.WANDER;
 				}
 
-				Steer.Tick(Position);
+				Nav.Tick(Position);
 
-				if (!Steer.Output.Finished) {
-					InputVelocity = Steer.Output.Direction.Normal;
+				if (!Nav.IsGoalFinished) {
+					InputVelocity = Nav.GoalDir.Normal;
 					Velocity = Velocity.AddClamped(InputVelocity * Time.Delta * 500, Speed);
 				}
 
 				/*if (nav_drawpath) {
-					Steer.DebugDrawPath();
+					Nav.DebugDrawPath();
 				}*/
 			}
 
@@ -89,10 +88,10 @@ namespace AIBox {
 			move.Trace = move.Trace.Ignore(this).Size(bbox);
 
 			if (!Velocity.IsNearlyZero(0.001f)) {
-				//	Sandbox.Debug.Draw.Once
-				//						.WithColor( Color.Red )
-				//						.IgnoreDepth()
-				//						.Arrow( Position, Position + Velocity * 2, Vector3.Up, 2.0f );
+				Sandbox.Debug.Draw.Once
+									.WithColor(Color.Red)
+									.IgnoreDepth()
+									.Arrow(Position, Position + Velocity * 2, Vector3.Up, 2.0f);
 
 				//using (Sandbox.Debug.Profile.Scope("TryUnstuck"))
 				move.TryUnstuck();
@@ -123,7 +122,7 @@ namespace AIBox {
 			} else {
 				GroundEntity = null;
 				move.Velocity += Vector3.Down * 900 * timeDelta;
-				//Sandbox.Debug.Draw.Once.WithColor(Color.Red).Circle(Position, Vector3.Up, 10.0f);
+				Sandbox.Debug.Draw.Once.WithColor(Color.Red).Circle(Position, Vector3.Up, 10.0f);
 			}
 			//}
 
