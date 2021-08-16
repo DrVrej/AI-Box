@@ -2,8 +2,8 @@
 using System.Threading.Tasks;
 
 namespace AIBox {
-	[Library("aibox_npc_default", Title = "AIBox NPC Default", Description = "AIBox NPC running on the default model.", Icon = "person", Spawnable = true)]
-	public partial class AIBoxNPCDefault : AIBoxNPC {
+	[Library("aibox_npc_citizen", Title = "Citizen NPC", Description = "Citizen NPC (default model).", Icon = "person", Spawnable = true)]
+	public partial class NPC_Citizen : NPC {
 
 		public override void Spawn() {
 			base.Spawn();

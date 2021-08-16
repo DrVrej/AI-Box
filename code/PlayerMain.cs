@@ -2,7 +2,7 @@ using Sandbox;
 using System.Collections.Generic;
 
 namespace AIBox {
-	partial class AIBoxPlayer : Player {
+	partial class PlayerMain : Player {
 		public Dictionary<string, string> soundTbl = new Dictionary<string, string>(){
 			{"spawn", "sounds/diagnostics/beep.vsnd"},
 		};
@@ -58,7 +58,7 @@ namespace AIBox {
 							.Ignore(this)
 							.Size(20)
 							.Run();
-						new AIBoxNPCDefault() {
+						new NPC_Citizen() {
 							Position = tr.EndPos,
 							Rotation = Rotation.LookAt(EyeRot.Backward.WithZ(0)),
 							Owner = this,

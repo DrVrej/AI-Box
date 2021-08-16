@@ -3,11 +3,11 @@ using Sandbox;
 
 namespace AIBox {
 
-	public class AIBoxHud : HudEntity<RootPanel> {
+	public class PlayerHUD : HudEntity<RootPanel> {
 
-		public AIBoxHud() {
+		public PlayerHUD() {
 			if (IsClient) {
-				RootPanel.StyleSheet.Load("/aiboxhud.scss");
+				RootPanel.StyleSheet.Load("/PlayerHUD.scss");
 				RootPanel.AddChild<NameTags>();
 				RootPanel.AddChild<CrosshairCanvas>();
 				RootPanel.AddChild<ChatBox>();

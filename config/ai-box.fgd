@@ -11,7 +11,7 @@
 ]
 
 // 
-// AIBox.AIBoxNPC : Sandbox.AnimEntity 
+// AIBox.NPC : Sandbox.AnimEntity 
 // 
 @PointClass = aibox_npc_base : "AI Base used to create NPCs."
 [
@@ -23,9 +23,9 @@
 ]
 
 // 
-// AIBox.AIBoxNPCDefault : AIBox.AIBoxNPC 
+// AIBox.NPC_Citizen : AIBox.NPC 
 // 
-@PointClass = aibox_npc_default : "AIBox NPC running on the default model."
+@PointClass = aibox_npc_citizen : "Citizen NPC (default model)."
 [
 	targetname(target_source) : "Name" : : "The name that other entities refer to this entity by."
 	parentname(target_destination) [ group="Hierarchy" ] : "Parent" : : "The name of this entity's parent in the movement hierarchy. Entities with parents move with their parent."

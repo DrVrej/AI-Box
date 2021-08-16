@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 
 namespace AIBox {
 	[Library("aibox_npc_base", Title = "AIBox NPC Base", Description = "AI Base used to create NPCs.", Icon = "person", Spawnable = true)]
-	public partial class AIBoxNPC : AnimEntity {
+	public partial class NPC : AnimEntity {
 		//[ConVar.Replicated]
 		//public static bool nav_drawpath { get; set; }
 		//public Sandbox.Debug.Draw Draw => Sandbox.Debug.Draw.Once;
@@ -18,7 +18,7 @@ namespace AIBox {
 		protected float Speed;
 		Vector3 InputVelocity;
 		Vector3 LookDir;
-		public AIBoxNavSteer Steer;
+		public NPCNav Steer;
 
 		private async void InitialSetup() {
 			await Task.Delay(100);
@@ -30,7 +30,7 @@ namespace AIBox {
 
 		public override void Spawn() {
 			base.Spawn();
-			Steer = new AIBoxNavSteer();
+			Steer = new NPCNav();
 			Tags.Add("NPC", "AIBox");
 
 			//SetModel("models/characters/combine_soldier/combine_soldier_new_content.vmdl_c");
@@ -41,7 +41,7 @@ namespace AIBox {
 
 		[Event.Tick.Server]
 		public void Tick() {
-			//using var _a = Sandbox.Debug.Profile.Scope("AIBoxNPC::Tick");
+			//using var _a = Sandbox.Debug.Profile.Scope("NPC::Tick");
 
 			InputVelocity = 0;
 

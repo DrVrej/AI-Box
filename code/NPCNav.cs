@@ -1,32 +1,39 @@
 ﻿using Sandbox;
 using System.Linq;
+using System.Collections.Generic;
 
 namespace AIBox {
-	public class AIBoxNavSteer {
-		protected AIBoxNavPath Path { get; private set; }
+	public class NPCNav {
+		public struct AIBoxNavSteerOutput {
+			public bool Finished;
+			public Vector3 Direction;
+		}
+
 		public Vector3 Target { get; set; }
 		public AIBoxNavSteerOutput Output;
 		public bool Wander = false;
 		public float MinRadius { get; set; } = 200;
 		public float MaxRadius { get; set; } = 500;
 
-		public AIBoxNavSteer() {
-			Path = new AIBoxNavPath();
-		}
+		public Vector3 TargetPosition;
+		public List<Vector3> Points = new List<Vector3>(); // List of Points the NPC is navigating to right now
+		public bool IsEmpty => Points.Count <= 1;
+
+		public NPCNav() { }
 
 		public virtual void Tick(Vector3 currentPosition) {
 			if (Target != null) {
-				Path.Update(currentPosition, Target);
+				Update(currentPosition, Target);
 			}
 
-			Output.Finished = Path.IsEmpty;
+			Output.Finished = IsEmpty;
 
 			if (Output.Finished) {
 				Output.Direction = Vector3.Zero;
 
 				// For wandering
 				if (Wander == true) {
-					if (Path.IsEmpty) {
+					if (IsEmpty) {
 						FindNewTarget_Wander(currentPosition);
 					}
 				} else { // If not wandering, then just return!
@@ -34,7 +41,7 @@ namespace AIBox {
 				}
 			}
 
-			Output.Direction = Path.GetDirection(currentPosition);
+			Output.Direction = GetDirection(currentPosition);
 
 			var avoid = GetAvoidance(currentPosition, 500);
 			if (!avoid.IsNearlyZero()) {
@@ -75,7 +82,7 @@ namespace AIBox {
 			Vector3 avoidance = default;
 
 			foreach (var ent in Physics.GetEntitiesInSphere(center, radius)) {
-				if (ent is not AIBoxNPC) continue;
+				if (ent is not NPC) continue;
 				if (ent.IsWorld) continue;
 
 				var delta = (position - ent.Position).WithZ(0);
@@ -91,14 +98,63 @@ namespace AIBox {
 			return avoidance;
 		}
 
-		public struct AIBoxNavSteerOutput {
-			public bool Finished;
-			public Vector3 Direction;
+		public void Update(Vector3 from, Vector3 to) {
+			bool needsBuild = false;
+
+			if (!TargetPosition.IsNearlyEqual(to, 5)) {
+				TargetPosition = to;
+				needsBuild = true;
+			}
+
+			if (needsBuild) {
+				var from_fixed = NavMesh.GetClosestPoint(from);
+				var tofixed = NavMesh.GetClosestPoint(to);
+
+				Points.Clear();
+				NavMesh.GetClosestPoint(from);
+				NavMesh.BuildPath(from_fixed.Value, tofixed.Value, Points);
+				//Points.Add( NavMesh.GetClosestPoint( to ) );
+			}
+
+			if (Points.Count <= 1) {
+				return;
+			}
+
+			var deltaToCurrent = from - Points[0];
+			var deltaToNext = from - Points[1];
+			var delta = Points[1] - Points[0];
+			var deltaNormal = delta.Normal;
+
+			if (deltaToNext.WithZ(0).Length < 20) {
+				Points.RemoveAt(0);
+				return;
+			}
+
+			// If we're in front of this line then
+			// remove it and move on to next one
+			if (deltaToNext.Normal.Dot(deltaNormal) >= 1.0f) {
+				Points.RemoveAt(0);
+			}
+		}
+
+		public float Distance(int point, Vector3 from) {
+			if (Points.Count <= point) return float.MaxValue;
+
+			return Points[point].WithZ(from.z).Distance(from);
+		}
+
+		public Vector3 GetDirection(Vector3 position) {
+			if (Points.Count == 1) {
+				return (Points[0] - position).WithZ(0).Normal;
+			} else if (Points.Count == 0) {
+				return position;
+			}
+			return (Points[1] - position).WithZ(0).Normal;
 		}
 
 		/*public virtual void DebugDrawPath() {
 			using (Sandbox.Debug.Profile.Scope("Path Debug Draw")) {
-				Path.DebugDraw(0.1f, 0.1f);
+				DebugDraw(0.1f, 0.1f);
 			}
 		}*/
 	}
