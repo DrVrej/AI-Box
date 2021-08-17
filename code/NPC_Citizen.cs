@@ -133,7 +133,7 @@ namespace AIBox {
 			}
 
 			Health = 100;
-			Speed = Rand.Float(100, 300);
+			Speed = 50; //Rand.Float(100, 300);
 			Scale = Rand.Float(0.9f, 1.2f);
 		}
 	}

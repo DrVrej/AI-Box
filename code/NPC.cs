@@ -52,8 +52,8 @@ namespace AIBox {
 
 				Nav.Tick(Position);
 
-				if (!Nav.IsGoalFinished) {
-					InputVelocity = Nav.GoalDir.Normal;
+				if (!Nav.Goal.IsGoalFinished()) {
+					InputVelocity = Nav.Goal.Direction.Normal;
 					Velocity = Velocity.AddClamped(InputVelocity * Time.Delta * 500, Speed);
 				}
 
