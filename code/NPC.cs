@@ -192,10 +192,10 @@ namespace AIBox {
 			Entity closest = null;
 			foreach (var ent in Entity.All.ToArray()) {
 				// Check only NPCs or Players!
-				if ((ent != this && (ent is NPC or PlayerMain)) && (ent.LifeState == LifeState.Alive)) {
+				if ((ent != this && (ent is NPC or SandboxPlayer)) && (ent.LifeState == LifeState.Alive)) {
 					bool isFri = false;
 					NPC npc = ent as NPC;
-					PlayerMain ply = ent as PlayerMain;
+					SandboxPlayer ply = ent as SandboxPlayer;
 					var entClasses = ent.GetRelationClasses();
 					//Log.Info(npc + " " + npc.IsValid() + " " + ply + " " + ply.IsValid());
 					bool classMatch = RelationClasses.Select(x => x).Intersect(entClasses).Any();
