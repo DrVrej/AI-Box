@@ -10,11 +10,11 @@ namespace AIBox {
 	}
 
 	public class NPCNav {
+		public readonly NPC Owner;
 		public NAV_STATE CurNavState = NAV_STATE.NONE; // The current navigation state (Usually set by the NPC)
 
 		public struct NavGoal {
 			public Vector3 Position;
-			public Vector3 PrevPosition;
 			public List<Vector3> Points; // List of Points the NPC is navigating to right now
 			public Vector3 Direction; // Current goal's direction (Useful for turning & facing)
 			public bool IsGoalFinished() { return Points.Count <= 1; }
@@ -34,8 +34,9 @@ namespace AIBox {
 		public NavWander Wander = new NavWander(200.0f, 500.0f);
 
 		// Constructor
-		public NPCNav() {
+		public NPCNav(NPC owner) {
 			Goal.Points = new List<Vector3>();
+			Owner = owner;
 		}
 
 		public virtual void Tick(Vector3 currentPosition) {
@@ -46,18 +47,23 @@ namespace AIBox {
 
 			if (Goal.Position != null) {
 				UpdateGoal(currentPosition, Goal.Position);
+				DebugDraw(0.1f, 0.1f);
+			}
+
+			// For Chasing, unlike wandering, it should constantly update the goal position!
+			if (CurNavState == NAV_STATE.CHASE) {
+				FindNewTarget_Chase(currentPosition);
 			}
 
 			if (Goal.IsGoalFinished()) {
 				Goal.Direction = Vector3.Zero; // Reset the Direction since the goal is finished
 
+				// For Wandering
 				if (CurNavState == NAV_STATE.WANDER) {
 					if (Wander.NextTime <= Time.Now) {
 						FindNewTarget_Wander(currentPosition);
 						Wander.NextTime = Time.Now + Rand.Float(3.0f, 10.0f);
 					}
-				} else if (CurNavState == NAV_STATE.CHASE) {
-					FindNewTarget_Chase(currentPosition);
 				} else { // No state, then just return
 					return;
 				}
@@ -65,6 +71,7 @@ namespace AIBox {
 
 			Goal.Direction = GetDirection(currentPosition);
 
+			// Attempt to avoid objects by going around them
 			var avoid = GetAvoidance(currentPosition, 300);
 			if (!avoid.IsNearlyZero()) {
 				Goal.Direction = (Goal.Direction + avoid).Normal;
@@ -74,34 +81,35 @@ namespace AIBox {
 		}
 
 		public virtual bool FindNewTarget_Wander(Vector3 center) {
-			var t = NavMesh.GetPointWithinRadius(center, Wander.MinRadius, Wander.MaxRadius);
-			if (t.HasValue) {
-				Goal.Position = t.Value;
+			var randPos = NavMesh.GetPointWithinRadius(center, Wander.MinRadius, Wander.MaxRadius);
+			if (randPos.HasValue) {
+				//Goal.Points.Clear();
+				Goal.Position = randPos.Value;
 			}
-
-			return t.HasValue;
+			return false;
 		}
 
 		public virtual bool FindNewTarget_Chase(Vector3 center) {
-			Entity closest = null;
-			foreach (var ply in Entity.All.OfType<Player>().ToArray()) {
-				if (ply.LifeState != LifeState.Alive) continue;
-				if (closest == null || center.Distance(closest.Position) > center.Distance(ply.Position)) {
-					closest = ply;
-				}
-			}
-			if (closest == null) {
-				//Goal.Position = null;
-				return false;
-			} else {
-				Goal.Position = closest.Position;
+			if (Owner.Enemy.Ent.IsValid()) {
+				//Goal.Points.Clear();
+				//if( Goal.Points.Count == 1){Goal.Points}
+				Goal.Position = Owner.Enemy.Ent.Position;
 				return true;
+			} else {
+				return false;
 			}
 		}
 
 		public void UpdateGoal(Vector3 from, Vector3 to) {
-			// Only rebuild the path if the position has changed greatly!
-			if (!Goal.PrevPosition.IsNearlyEqual(to, 5)) {
+			// Only rebuild the path if the position has changed greatly! (For optimization)
+			bool ignoreLastPos = false;
+			Vector3 lastPos = Vector3.Zero;
+			try {
+				lastPos = Goal.Points.Last();
+			} catch (System.Exception) {
+				ignoreLastPos = true;
+			}
+			if (ignoreLastPos || !lastPos.IsNearlyEqual(to, 6.0f)) {
 				var fromFixed = NavMesh.GetClosestPoint(from);
 				var toFixed = NavMesh.GetClosestPoint(to);
 				Goal.Points.Clear(); // Remove all points
@@ -110,7 +118,6 @@ namespace AIBox {
 				//Goal.Points.Add( NavMesh.GetClosestPoint( to ) );
 			}
 			if (Goal.Points.Count <= 1) { return; }
-			Goal.PrevPosition = to;
 
 			//var deltaToCurrent = from - Goal.Points[0]; // Unused
 			var deltaToNext = from - Goal.Points[1];

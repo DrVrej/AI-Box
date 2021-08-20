@@ -13,7 +13,6 @@ namespace AIBox {
 			Owner.SetAnimLookAt("aim_eyes", look);
 			Owner.SetAnimLookAt("aim_head", look);
 			Owner.SetAnimLookAt("aim_body", look);
-			Owner.SetAnimFloat("aimat_weight", 0.5f);
 		}
 
 		public void WithVelocity(Vector3 Velocity) {

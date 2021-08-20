@@ -17,6 +17,11 @@ namespace AIBox {
 
 			SetMaterialGroup(Rand.Int(0, 4));
 
+			Health = 100;
+			Speed = Rand.Float(100, 300);
+			Scale = Rand.Float(0.9f, 1.2f);
+			RelationClasses.Add("citizen");
+			//RelationClasses.Add("player");
 
 			// Head
 			int head = Rand.Int(3); // 0 = Nothing
@@ -92,7 +97,7 @@ namespace AIBox {
 			}
 
 			// Pants or Shorts
-			int pants = Rand.Int(0); // 0 = Nothing
+			int pants = Rand.Int(9); // 0 = Nothing
 			if (pants == 1) {
 				var shorts = new ModelEntity("models/citizen_clothes/shoes/shorts.cargo.vmdl", this);
 				shorts.SetMaterialGroup(this.GetMaterialGroup());
@@ -131,10 +136,22 @@ namespace AIBox {
 			if (accessory == 1) {
 				new ModelEntity("models/citizen_clothes/gloves/gloves_workgloves.vmdl", this);
 			}
-
-			Health = 100;
-			Speed = 50; //Rand.Float(100, 300);
-			Scale = Rand.Float(0.9f, 1.2f);
+		}
+		public float NextTime = 0.0f;
+		public override void Tick() {
+			base.Tick();
+			if (NextTime <= Time.Now) {
+				//SetAnimBool("b_melee", true);
+				SetAnimInt("holdtype", 4);
+				SetAnimFloat("holdtype_attack", 5.0f); // Larger # = Stronger attack & more up
+				SetAnimInt("holdtype_handedness", 1);
+				SetAnimBool("b_attack", true);
+				NextTime = Time.Now + 1.0f;
+			}
+			var animHelper = new CitizenAnimationHelper(this);
+			animHelper.WithLookAt(EyePos + LookDir);
+			animHelper.WithVelocity(Velocity);
+			animHelper.WithWishVelocity(InputVelocity);
 		}
 	}
 }

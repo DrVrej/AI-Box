@@ -1,53 +1,96 @@
 ﻿using Sandbox;
+using System;
+using System.Linq;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace AIBox {
+	public enum AI_STATE {
+		IDLE,
+		ALERT,
+		FROZEN,
+	}
+	public enum AI_BEHAVIOR {
+		PASSIVE,
+		AGGRESSIVE,
+		NEUTRAL,
+	}
+	public enum AI_DISPOSITION {
+		INVALID,
+		FRIENDLY,
+		NEUTRAL,
+		HOSTILE,
+	}
+
 	//[Library("aibox_npc_base", Title = "AIBox NPC Base", Description = "AI Base used to create NPCs.", Icon = "person", Spawnable = true)]
 	public partial class NPC : AnimEntity {
 		//[ConVar.Replicated]
 		//public static bool nav_drawpath { get; set; }
 
-		public enum STATE : int {
-			IDLE = 0,
-			ALERT = 1,
-			FROZEN = 2,
-		}
-		public STATE State = STATE.IDLE;
-
+		public AI_STATE State = AI_STATE.IDLE;
 		protected float Speed;
-		Vector3 InputVelocity;
-		Vector3 LookDir;
-		public NPCNav Nav;
+		protected Vector3 InputVelocity;
+		protected Vector3 LookDir;
+		public readonly NPCNav Nav;
+
+		public float SightDistance = 1000.0f; // TODO: Not implemented
+		public AI_BEHAVIOR Behavior = AI_BEHAVIOR.AGGRESSIVE; // TODO: Not implemented
+		public List<string> RelationClasses = new List<string>();
+
+		public struct AIRelation {
+			public Entity Ent;
+			public AI_DISPOSITION Disposition;
+			public int Priority; // TODO: Not implemented
+			public AI_DISPOSITION ForcedDisposition; // TODO: Not implemented, supposed to overtake Disposition !
+													 // EX: Player-Friendly NPC turns on a specific player OR a specific player/NPC is set as friendly to this NPC
+			public AIRelation(Entity Ent, AI_DISPOSITION Disposition, int Priority) {
+				this.Ent = Ent;
+				this.Disposition = Disposition;
+				this.Priority = Priority;
+				this.ForcedDisposition = AI_DISPOSITION.INVALID;
+			}
+		}
+		public Dictionary<Entity, AIRelation> Relations = new Dictionary<Entity, AIRelation>();
+
+		public struct AIEnemy {
+			public Entity Ent; // The actual enemy entity
+			public float Distance; // TODO: Calculated every tick, distance from me to the enemy
+			public AIEnemy(Entity Ent, float Distance = 0.0f) {
+				this.Ent = Ent;
+				this.Distance = Distance;
+			}
+		}
+		public AIEnemy Enemy = new();
+
+		public float NextRelationsUpdate = 0.0f;
+
+		public NPC() {
+			Nav = new NPCNav(this);
+		}
 
 		private async void InitialSetup() {
 			await Task.Delay(100);
 			if (this.IsValid()) {
-				Log.Info("Owner:" + Owner);
 				PlaySound("vj.playerspawn");
 			}
 		}
 
 		public override void Spawn() {
 			base.Spawn();
-			Nav = new NPCNav();
-			Tags.Add("NPC", "AIBox");
-
-			//SetModel("models/characters/combine_soldier/combine_soldier_new_content.vmdl_c");
-			//SetModel("models/citizen/citizen.vmdl");
-
+			Tags.Add("npc", "aibox");
 			InitialSetup();
 		}
 
 		[Event.Tick.Server]
-		public void Tick() {
-			//using var _a = Sandbox.Debug.Profile.Scope("NPC::Tick");
-
+		public virtual void Tick() {
 			InputVelocity = 0;
 
 			if (Nav != null) {
 				// Wander around
-				if (State == STATE.IDLE) {
+				if (State == AI_STATE.IDLE) {
 					Nav.CurNavState = NAV_STATE.WANDER;
+				} else if (State == AI_STATE.ALERT) {
+					Nav.CurNavState = NAV_STATE.CHASE;
 				}
 
 				Nav.Tick(Position);
@@ -77,6 +120,19 @@ namespace AIBox {
 			animHelper.WithLookAt(EyePos + LookDir);
 			animHelper.WithVelocity(Velocity);
 			animHelper.WithWishVelocity(InputVelocity);
+
+			if (NextRelationsUpdate <= Time.Now) {
+				UpdateRelations();
+				NextRelationsUpdate = Time.Now + 1.0f;
+			}
+
+			if (Enemy.Ent != null) {
+				Enemy.Distance = Position.Distance(Enemy.Ent.Position);
+				State = AI_STATE.ALERT;
+			} else {
+				State = AI_STATE.IDLE;
+			}
+			Log.Info("Current Enemy: " + Enemy.Ent);
 		}
 
 		protected virtual void Move(float timeDelta) {
@@ -128,6 +184,53 @@ namespace AIBox {
 
 			Position = move.Position;
 			Velocity = move.Velocity;
+		}
+
+		public virtual void UpdateRelations() {
+			// TODO: Delete dead invalid players/NPCs from the dictionary!
+
+			Entity closest = null;
+			foreach (var ent in Entity.All.ToArray()) {
+				// Check only NPCs or Players!
+				if ((ent != this && (ent is NPC or PlayerMain)) && (ent.LifeState == LifeState.Alive)) {
+					bool isFri = false;
+					NPC npc = ent as NPC;
+					PlayerMain ply = ent as PlayerMain;
+					var entClasses = ent.GetRelationClasses();
+					//Log.Info(npc + " " + npc.IsValid() + " " + ply + " " + ply.IsValid());
+					bool classMatch = RelationClasses.Select(x => x).Intersect(entClasses).Any();
+					if (classMatch) {
+						isFri = true;
+						if (Relations.ContainsKey(ent)) {
+							AIRelation rel = Relations[ent];
+							rel.Disposition = AI_DISPOSITION.FRIENDLY;
+							Relations[ent] = rel;
+						} else {
+							Relations[ent] = new AIRelation(ent, AI_DISPOSITION.FRIENDLY, 0);
+						}
+					}
+					// This ent is NOT a friend!
+					if (!isFri) {
+						// Set my disposition to it as enemy!
+						if (Relations.ContainsKey(ent)) {
+							AIRelation rel = Relations[ent];
+							rel.Disposition = AI_DISPOSITION.HOSTILE;
+							Relations[ent] = rel;
+						} else {
+							Relations[ent] = new AIRelation(ent, AI_DISPOSITION.HOSTILE, 0);
+						}
+						if (closest == null || Position.Distance(closest.Position) > Position.Distance(ent.Position)) {
+							closest = ent;
+						}
+					}
+				}
+			}
+			if (closest == null) {
+				// TODO: Reset enemy?
+				Enemy = new AIEnemy(null);
+			} else {
+				Enemy = new AIEnemy(closest);
+			}
 		}
 	}
 }
