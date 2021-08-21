@@ -24,33 +24,29 @@ namespace AIBox {
 
 	//[Library("aibox_npc_base", Title = "AIBox NPC Base", Description = "AI Base used to create NPCs.", Icon = "person", Spawnable = true)]
 	public partial class NPC : AnimEntity {
-		//[ConVar.Replicated]
-		//public static bool nav_drawpath { get; set; }
-
 		public AI_STATE State = AI_STATE.IDLE;
 		protected float Speed;
 		protected Vector3 InputVelocity;
 		protected Vector3 LookDir;
 		public readonly NPCNav Nav;
 
-		public float SightDistance = 1000.0f; // TODO: Not implemented
+		public float SightDistance = 1000.0f; // If the enemy farther than this it will be ignored.
 		public AI_BEHAVIOR Behavior = AI_BEHAVIOR.AGGRESSIVE; // TODO: Not implemented
-		public List<string> RelationClasses = new List<string>();
-
+		public List<string> RelationClasses = new();
 		public struct AIRelation {
 			public Entity Ent;
 			public AI_DISPOSITION Disposition;
 			public int Priority; // TODO: Not implemented
 			public AI_DISPOSITION ForcedDisposition; // TODO: Not implemented, supposed to overtake Disposition !
 													 // EX: Player-Friendly NPC turns on a specific player OR a specific player/NPC is set as friendly to this NPC
-			public AIRelation(Entity Ent, AI_DISPOSITION Disposition, int Priority) {
+			public AIRelation(Entity Ent, AI_DISPOSITION Disposition, int Priority = 0) {
 				this.Ent = Ent;
 				this.Disposition = Disposition;
 				this.Priority = Priority;
 				this.ForcedDisposition = AI_DISPOSITION.INVALID;
 			}
 		}
-		public Dictionary<Entity, AIRelation> Relations = new Dictionary<Entity, AIRelation>();
+		public Dictionary<Entity, AIRelation> Relations = new();
 
 		public struct AIEnemy {
 			public Entity Ent; // The actual enemy entity
@@ -63,22 +59,19 @@ namespace AIBox {
 		public AIEnemy Enemy = new();
 
 		public float NextRelationsUpdate = 0.0f;
+		public float NextRelationsCleanupUpdate = 0.0f;
 
 		public NPC() {
 			Nav = new NPCNav(this);
 		}
 
-		private async void InitialSetup() {
-			await Task.Delay(100);
+		public async override void Spawn() {
+			base.Spawn();
+			Tags.Add("npc", "aibox");
+			await Task.DelaySeconds(0.1f);
 			if (this.IsValid()) {
 				PlaySound("vj.playerspawn");
 			}
-		}
-
-		public override void Spawn() {
-			base.Spawn();
-			Tags.Add("npc", "aibox");
-			InitialSetup();
 		}
 
 		[Event.Tick.Server]
@@ -113,26 +106,32 @@ namespace AIBox {
 				var targetRotation = Rotation.LookAt(walkVelocity.Normal, Vector3.Up);
 				Rotation = Rotation.Lerp(Rotation, targetRotation, turnSpeed * Time.Delta * 20.0f);
 			}
-
-			var animHelper = new CitizenAnimationHelper(this);
-
 			LookDir = Vector3.Lerp(LookDir, InputVelocity.WithZ(0) * 1000, Time.Delta * 100.0f);
-			animHelper.WithLookAt(EyePos + LookDir);
-			animHelper.WithVelocity(Velocity);
-			animHelper.WithWishVelocity(InputVelocity);
 
+			// Update Relations
 			if (NextRelationsUpdate <= Time.Now) {
 				UpdateRelations();
 				NextRelationsUpdate = Time.Now + 1.0f;
 			}
 
-			if (Enemy.Ent != null) {
+			if (Enemy.Ent.IsValid()) {
 				Enemy.Distance = Position.Distance(Enemy.Ent.Position);
 				State = AI_STATE.ALERT;
 			} else {
 				State = AI_STATE.IDLE;
 			}
-			Log.Info("Current Enemy: " + Enemy.Ent);
+			//Log.Info("Current Enemy: " + Enemy.Ent + " | Distance: " + Enemy.Distance + " | AI State: " + State);
+
+			// Occasionally clean up the Relations list by removing deleted entities
+			if (NextRelationsCleanupUpdate <= Time.Now) {
+				CleanupRelations();
+				NextRelationsCleanupUpdate = Time.Now + 5.0f;
+			}
+
+			// Debug the NPC's EyePos and see its forward direction
+			//var draw = Sandbox.Debug.Draw.ForSeconds(0.5f);
+			//draw.WithColor(Color.Red).Circle(EyePos, Vector3.Up, 5.0f);
+			//draw.WithColor(Color.Magenta).Arrow(EyePos, EyePos + LocalRotation.Forward * 200.0f, Vector3.Up, 5.0f);
 		}
 
 		protected virtual void Move(float timeDelta) {
@@ -186,13 +185,14 @@ namespace AIBox {
 			Velocity = move.Velocity;
 		}
 
-		public virtual void UpdateRelations() {
-			// TODO: Delete dead invalid players/NPCs from the dictionary!
-
+		/// <summary>
+		/// Updates the Relations list and updates the enemy entity.
+		/// </summary>
+		public void UpdateRelations() {
 			Entity closest = null;
 			foreach (var ent in Entity.All.ToArray()) {
 				// Check only NPCs or Players!
-				if ((ent != this && (ent is NPC or SandboxPlayer)) && (ent.LifeState == LifeState.Alive)) {
+				if (ent != this && (ent is NPC or SandboxPlayer) && (ent.LifeState == LifeState.Alive)) {
 					bool isFri = false;
 					NPC npc = ent as NPC;
 					SandboxPlayer ply = ent as SandboxPlayer;
@@ -206,7 +206,7 @@ namespace AIBox {
 							rel.Disposition = AI_DISPOSITION.FRIENDLY;
 							Relations[ent] = rel;
 						} else {
-							Relations[ent] = new AIRelation(ent, AI_DISPOSITION.FRIENDLY, 0);
+							Relations[ent] = new AIRelation(ent, AI_DISPOSITION.FRIENDLY);
 						}
 					}
 					// This ent is NOT a friend!
@@ -217,19 +217,34 @@ namespace AIBox {
 							rel.Disposition = AI_DISPOSITION.HOSTILE;
 							Relations[ent] = rel;
 						} else {
-							Relations[ent] = new AIRelation(ent, AI_DISPOSITION.HOSTILE, 0);
+							Relations[ent] = new AIRelation(ent, AI_DISPOSITION.HOSTILE);
 						}
-						if (closest == null || Position.Distance(closest.Position) > Position.Distance(ent.Position)) {
-							closest = ent;
+						var distToEnt = Position.Distance(ent.Position);
+						//Log.Info(distToEnt + " / " + SightDistance + "   | " + ent.Position + " | " + Position);
+						if (distToEnt <= SightDistance) {
+							if (closest == null || Position.Distance(closest.Position) > distToEnt) {
+								closest = ent;
+							}
 						}
 					}
 				}
 			}
-			if (closest == null) {
+			if (closest.IsValid()) {
+				Enemy = new AIEnemy(closest);
+			} else {
 				// TODO: Reset enemy?
 				Enemy = new AIEnemy(null);
-			} else {
-				Enemy = new AIEnemy(closest);
+			}
+		}
+
+		/// <summary>
+		/// Updates the Relations list by removing deleted entities.
+		/// </summary>
+		public void CleanupRelations() {
+			foreach (var ent in Relations.Keys.ToArray()) {
+				if (!ent.IsValid()) {
+					Relations.Remove(ent);
+				}
 			}
 		}
 	}

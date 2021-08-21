@@ -19,7 +19,7 @@ namespace AIBox {
 			public Vector3 Direction; // Current goal's direction (Useful for turning & facing)
 			public bool IsGoalFinished() { return Points.Count <= 1; }
 		}
-		public NavGoal Goal = new NavGoal();
+		public NavGoal Goal = new();
 
 		public struct NavWander {
 			public float MinRadius; // Minimum wandering distance
@@ -31,7 +31,7 @@ namespace AIBox {
 				NextTime = 0.0f;
 			}
 		}
-		public NavWander Wander = new NavWander(200.0f, 500.0f);
+		public NavWander Wander = new(200.0f, 500.0f);
 
 		// Constructor
 		public NPCNav(NPC owner) {
