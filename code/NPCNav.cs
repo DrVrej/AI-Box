@@ -17,6 +17,7 @@ namespace AIBox {
 			public Vector3 Position;
 			public List<Vector3> Points; // List of Points the NPC is navigating to right now
 			public Vector3 Direction; // Current goal's direction (Useful for turning & facing)
+			public bool ShouldMove; // Should the NPC move to the goal?
 			public bool IsGoalFinished() { return Points.Count <= 1; }
 		}
 		public NavGoal Goal = new();
@@ -36,6 +37,7 @@ namespace AIBox {
 		// Constructor
 		public NPCNav(NPC owner) {
 			Goal.Points = new List<Vector3>();
+			Goal.ShouldMove = false;
 			Owner = owner;
 		}
 
@@ -45,7 +47,7 @@ namespace AIBox {
 				Log.Info($"      Goal.Points[{i}]: {Goal.Points[i].ToString()}");
 			}*/
 
-			if (Goal.Position != null) {
+			if (Goal.Position != null && Goal.ShouldMove) {
 				UpdateGoal(currentPosition, Goal.Position);
 				DebugDraw(0.1f, 0.1f);
 			}
@@ -57,6 +59,7 @@ namespace AIBox {
 
 			if (Goal.IsGoalFinished()) {
 				Goal.Direction = Vector3.Zero; // Reset the Direction since the goal is finished
+				Goal.ShouldMove = false; // Stop moving since the goal is finished
 
 				// For Wandering
 				if (CurNavState == NAV_STATE.WANDER) {
@@ -85,6 +88,7 @@ namespace AIBox {
 			if (randPos.HasValue) {
 				//Goal.Points.Clear();
 				Goal.Position = randPos.Value;
+				Goal.ShouldMove = true;
 			}
 			return false;
 		}
@@ -94,6 +98,7 @@ namespace AIBox {
 				//Goal.Points.Clear();
 				//if( Goal.Points.Count == 1){Goal.Points}
 				Goal.Position = Owner.Enemy.Ent.Position;
+				Goal.ShouldMove = true;
 				return true;
 			} else {
 				return false;

@@ -92,10 +92,6 @@ namespace AIBox {
 					InputVelocity = Nav.Goal.Direction.Normal;
 					Velocity = Velocity.AddClamped(InputVelocity * Time.Delta * 500, Speed);
 				}
-
-				/*if (nav_drawpath) {
-					Nav.DebugDrawPath();
-				}*/
 			}
 
 			Move(Time.Delta);
@@ -114,6 +110,7 @@ namespace AIBox {
 				NextRelationsUpdate = Time.Now + 1.0f;
 			}
 
+			// Handle Relation for Enemy
 			if (Enemy.Ent.IsValid()) {
 				Enemy.Distance = Position.Distance(Enemy.Ent.Position);
 				State = AI_STATE.ALERT;

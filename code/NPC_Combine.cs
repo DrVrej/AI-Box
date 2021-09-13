@@ -5,6 +5,11 @@ namespace AIBox {
 	[Library("aibox_npc_combine", Title = "Combine Soldier", Description = "Combine Soldier NPC.", Icon = "person", Spawnable = true)]
 	public partial class NPC_Combine : NPC {
 
+		/* Notes:
+			* Animgraph:
+				* Only has 1 hold type: Rifle
+				* Unused parameters: e_combineclass, e_weapon, e_specific_activities, e_danger_type
+		*/
 		public override void Spawn() {
 			base.Spawn();
 
@@ -20,22 +25,30 @@ namespace AIBox {
 			Health = 100;
 			Speed = 100;
 			RelationClasses.Add("combine");
+			//RelationClasses.Add("player");
 			UseAnimGraph = true;
+		}
+
+		protected override void OnAnimGraphTag(string tag, AnimGraphTagEvent fireMode) {
+			Log.Info(tag);
 		}
 
 		public override void Tick() {
 			base.Tick();
-			SetAnimInt("holdtype", 2);
 
-			//SetAnimInt("e_weapon", 1);
-			SetAnimBool("b_combat", true);
-			SetAnimBool("b_aim", true);
-			SetAnimBool("bLookAt", true);
 			//SetAnimLookAt("bLookAt", EyePos + LookDir);
-			var animHelper = new CitizenAnimationHelper(this);
-			animHelper.WithLookAt(EyePos + LookDir);
-			animHelper.WithVelocity(Velocity);
-			animHelper.WithWishVelocity(InputVelocity);
+
+			if (Enemy.Ent.IsValid()) {
+				SetAnimBool("b_combat", true);
+			} else {
+				SetAnimBool("b_combat", false);
+			}
+
+			if (Nav != null) {
+				if (!Nav.Goal.IsGoalFinished()) {
+					//SetAnimBool("b_combat", false);
+				}
+			}
 		}
 	}
 }
